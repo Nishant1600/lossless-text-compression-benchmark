@@ -1,0 +1,27 @@
+\begin{table*}[t]\centering\caption{Bits per byte on the 1\,MB slices, all methods (self-contained output; language-model rows exclude the model weights, see \cref{tab:cost}). \na: not run.}\label{tab:slice}\small
+\begin{adjustbox}{max width=\textwidth}\begin{tabular}{@{}clrrrrrrr@{}}\toprule
+Fam. & Method & English & Hindi & Chinese & enwik8 & dickens & xml & C/C++\\\midrule
+E & Huffman & 4.605 & 3.761 & 6.219 & 5.087 & 4.540 & 5.370 & 5.266\\
+E & Dyn.\ Huffman & 4.620 & 3.780 & 6.229 & 5.106 & 4.558 & 5.396 & 5.289\\
+E & rANS-0 & 4.581 & 3.733 & 6.189 & 5.062 & 4.502 & 5.348 & 5.238\\
+E & Ext.\ Huffman & 8.410 & 3.586 & 9.543 & 7.946 & 7.710 & 3.620 & 6.341\\
+E & EEHC & 8.462 & 3.614 & 9.607 & 7.993 & 7.753 & 3.649 & 6.375\\
+\midrule
+D & gzip & 3.324 & 1.800 & 4.267 & 2.846 & 2.960 & 1.071 & 1.727\\
+D & bzip2 & 2.559 & 1.190 & 3.201 & 2.251 & 2.162 & 0.784 & 1.503\\
+D & zstd & 2.769 & 1.410 & 3.531 & 2.401 & 2.381 & 0.908 & 1.455\\
+D & xz & 2.731 & 1.383 & 3.434 & 2.326 & 2.356 & 0.885 & 1.397\\
+D & Brotli & 2.631 & 1.395 & 3.413 & 2.248 & 2.317 & 0.867 & 1.378\\
+D & bsc & 2.277 & 1.067 & 2.954 & 2.034 & 1.913 & 0.715 & 1.362\\
+\midrule
+M & PPMd & 2.232 & 1.247 & 2.906 & 2.000 & 1.879 & 0.829 & 1.375\\
+M & zpaq & 2.170 & 1.188 & 2.843 & 1.840 & 1.781 & 0.671 & 1.079\\
+M & CM & 2.173 & 1.187 & 2.860 & 1.922 & 1.852 & 0.703 & 1.220\\
+M & paq8px & 1.957 & 0.939 & 2.590 & 1.555 & \best{1.589} & \best{0.552} & \best{0.802}\\
+M & TRACE & 2.777 & 1.464 & 3.442 & 2.600 & 2.407 & 1.050 & 2.026\\
+M & NNCP & 2.830 & 1.405 & 3.444 & \na & \na & \na & \na\\
+\midrule
+L & GPT-2 & 1.250 & 1.557 & 3.246 & 1.211 & \na & \na & \na\\
+L & Qwen-0.5B & 1.087 & 0.878 & \best{1.635} & \best{0.875} & \na & \na & \na\\
+L & Qwen-1.5B & \best{0.979} & \best{0.770} & \na & \na & \na & \na & \na\\
+\bottomrule\end{tabular}\end{adjustbox}\end{table*}

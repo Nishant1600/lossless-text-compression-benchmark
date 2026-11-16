@@ -1,0 +1,20 @@
+\begin{table*}[t]\centering\caption{Compressed size in bits per byte on the full TextBench files (self-contained output, lower is better; best per column in bold; Canterbury: total of its eight text files). paq8px ran on xml and Canterbury only; neural and language-model methods are reported on 1\,MB slices in \cref{tab:slice}.}\label{tab:full}\small
+\begin{adjustbox}{max width=\textwidth}\begin{tabular}{@{}clrrrrrrrr@{}}\toprule
+Fam. & Method & English & Hindi & Chinese & enwik8 & dickens & xml & C/C++ & Canterbury\\\midrule
+E & Huffman & 4.604 & 3.673 & 6.037 & 5.130 & 4.573 & 5.555 & 5.167 & 4.680\\
+E & Dyn.\ Huffman & 4.608 & 3.675 & 6.039 & 5.134 & 4.578 & 5.564 & 5.177 & 4.766\\
+E & rANS-0 & 4.582 & 3.643 & 6.002 & 5.100 & 4.533 & 5.510 & 5.140 & 4.648\\
+E & Ext.\ Huffman & 9.095 & 5.083 & 9.188 & 8.710 & 9.072 & 4.192 & 7.064 & 8.412\\
+E & EEHC & 9.132 & 5.094 & 9.229 & 8.750 & 9.112 & 4.201 & 7.071 & 8.464\\
+\midrule
+D & gzip & 3.285 & 1.721 & 4.233 & 2.951 & 3.026 & 0.986 & 1.427 & 2.966\\
+D & bzip2 & 2.495 & 1.113 & 3.152 & 2.333 & 2.197 & 0.660 & 1.251 & 2.276\\
+D & zstd & 2.430 & 1.136 & 3.123 & 2.234 & 2.236 & 0.678 & 1.135 & 2.582\\
+D & xz & 2.405 & 1.109 & 3.064 & 2.176 & 2.222 & 0.651 & 1.083 & 2.549\\
+D & Brotli & 2.399 & 1.144 & 3.079 & 2.164 & 2.220 & 0.644 & 1.081 & 2.460\\
+D & bsc & 1.941 & \best{0.834} & 2.618 & 1.859 & 1.773 & 0.588 & 1.138 & 2.116\\
+\midrule
+M & PPMd & 1.963 & 1.160 & 2.575 & 1.895 & 1.803 & 0.743 & 1.219 & 2.054\\
+M & zpaq & \best{1.833} & 1.035 & \best{2.495} & \best{1.673} & \best{1.644} & \best{0.489} & \best{0.822} & \best{1.992}\\
+M & CM & 1.948 & 1.263 & 2.799 & 1.846 & 1.789 & 0.571 & 0.987 & 2.002\\
+\bottomrule\end{tabular}\end{adjustbox}\end{table*}

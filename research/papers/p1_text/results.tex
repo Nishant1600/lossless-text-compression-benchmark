@@ -1,0 +1,47 @@
+\subsection{Classical compressors on the full files}
+\Cref{tab:full} gives the self-contained size of every classical method on the full TextBench files. Three groups separate cleanly. Order-0 entropy coders (Huffman, block-wise dynamic Huffman, rANS) stay between 3.6 and 6.0\,bpb, the order-0 entropy of the files. Dictionary and block-sorting compressors reach 0.6--4.2\,bpb, with bsc best on Hindi (\NumFBscHi{}\,bpb). Context models are best almost everywhere: zpaq's method~5 gives \NumFZpaqEn{}\,bpb on English sentences and \NumFZpaqXml{}\,bpb on \texttt{xml}. Chinese is the hardest text for every byte-level method (\NumFZpaqZh{}\,bpb at best), because each Han character spreads its information over three UTF-8 bytes whose statistics a byte context sees only partially.
+
+\input{tables/full_results}
+
+\subsection{Neural and language-model compressors on 1\,MB slices}
+\Cref{tab:slice} adds the slow methods on 1\,MB slices. Pretrained language models give the smallest payloads on all four slices they ran on. Qwen2.5-1.5B codes English sentences at \NumSQlEn{}\,bpb and Hindi at \NumSQlHi{}\,bpb; Qwen2.5-0.5B codes Chinese at \NumSQsZh{}\,bpb and enwik8 at \NumSQsWk{}\,bpb. The strongest classical model, paq8px, reaches \NumSPaqEn{}, \NumSPaqHi{}, \NumSPaqZh{} and \NumSPaqWk{}\,bpb on the same slices, so the best language model is \NumBestLLMgain{} smaller on \NumBestLLMfile{} and further ahead on English and enwik8. GPT-2 is a different story: it beats paq8px on English (\NumSGptEn{}) and enwik8 (\NumSGptWk{}) but loses badly on Hindi (\NumSGptHi{}) and Chinese (\NumSGptZh{}), where it is worse than bzip2.
+
+The two online neural compressors do not reach PPM-class results at this size: TRACE gives \NumSTraceEn{}\,bpb on English and NNCP \NumSNncpEn{}\,bpb, both worse than PPMd (\NumSPpmdEn{}). Both start from random weights and learn while they code; one megabyte is too little for them to catch up with models whose statistics are counted directly. NNCP's published enwik9 results come from 1\,GB of training data and data-centre GPUs~\cite{bellard2021nncpv2}.
+
+\input{tables/slice_results}
+
+\subsection{What the decoder must hold}\label{sec:costres}
+\Cref{tab:cost} charges each method for its pretrained knowledge, and \cref{fig:breakeven} plots the result against input size. The payload of Qwen-0.5B is \NumQsEnrP{}--\NumQsHirP{}\,bpb on English and Hindi, but its \NumQwenSmallGB{}\,GB of weights make its rate about 9\,bpb at 1\,GB of input; it overtakes xz only after \NumBreakEvenSmall{} of text, and paq8px only after \NumBreakEvenSmallPaq{}. For Qwen-1.5B (\NumQwenLargeGB{}\,GB) the break-even points are \NumBreakEvenLarge{} and \NumBreakEvenLargePaq{}. GPT-2 never repays its weights against paq8px on these texts, because it loses on Hindi and Chinese. At the other end of the scale, Brotli's 122\,KB built-in dictionary is repaid after \NumBreakEvenBrotli{}. The Huffman-family coders show the opposite pattern on the payload column: EEHC's payload alone is \NumEEHCpayloadMean{}\,bpb averaged over the full files, better than gzip, but its decodable file averages \NumEEHCfileMean{}\,bpb (\cref{sec:huff}).
+
+\input{tables/cost}
+
+\begin{figure}[t]\centering
+\includegraphics[width=\columnwidth]{breakeven}
+\caption{Rate including pretrained knowledge, $r_K(N)$, against input size $N$ (mean of the three language slices). Horizontal lines: self-contained rate of xz and paq8px on the same slices.}
+\label{fig:breakeven}
+\end{figure}
+
+\subsection{Script and tokeniser}\label{sec:scriptres}
+\Cref{tab:tok} splits each language model's payload into tokens per byte and bits per token, and \cref{fig:languages} compares the methods across scripts. On English the two tokenisers produce the same number of tokens (\NumGptEntpb{} and \NumQsEntpb{} per byte), so the whole difference between GPT-2 and Qwen-0.5B (\NumGptEnrP{} vs \NumQsEnrP{}\,bpb) is prediction: \NumGptEnbpt{} against \NumQsEnbpt{} bits per token. On Hindi, GPT-2's tokeniser emits \NumGptHitpb{} tokens per byte against Qwen's \NumQsHitpb{}, while the bits per token are close (\NumGptHibpt{} and \NumQsHibpt{}); on a logarithmic scale the token count accounts for \NumTokShareHi{} of the gap. On Chinese GPT-2 needs \NumGptZhtpb{} tokens per byte against \NumQsZhtpb{}; the token count alone accounts for more than the entire gap (\NumTokShareZh{}), because Qwen's longer tokens each carry more information (\NumQsZhbpt{} bits). Holding the tokeniser fixed, tripling the model from 0.5B to 1.5B parameters lowers the payload by \NumScaleEn{} on English and \NumScaleHi{} on Hindi.
+
+Bits per byte flatter scripts with multi-byte characters. Per character, Qwen-0.5B spends \NumQsEnbpcV{} bits on English, \NumQsHibpcV{} on Hindi and \NumQsZhbpcV{} on Chinese (\cref{tab:tok}); the Leipzig files are not translations of each other, so these figures compare scripts, not languages.
+
+\input{tables/tok}
+
+\begin{figure*}[t]\centering
+\includegraphics[width=\textwidth]{languages}
+\caption{Bits per byte on the 1\,MB slices of English, Hindi, Chinese and enwik8, by method family. Labels name each bar's method.}
+\label{fig:languages}
+\end{figure*}
+
+\subsection{Huffman-family coders}\label{sec:huff}
+Plain order-0 Huffman coding stays within \NumHuffOverHzeroMax\% of the order-0 entropy on every file, and rANS, which is not limited to whole bits per symbol, is \NumRansUnderHuff\% smaller on average (\cref{tab:full}). Rebuilding the tree every 4\,KiB from the bytes seen so far (block-wise dynamic Huffman~\cite{klein2024dynhuff}) costs at most \NumDynOverStaticMax\% against static Huffman and needs no stored table. Coding blocks instead of bytes, as Extended Huffman and EEHC do, helps only when whole blocks repeat: of the \NumEEHCfiles{} full files, EEHC's decodable output is larger than order-0 Huffman's on \NumEEHCworseThanHuffman{}, and only the highly repetitive \texttt{xml} benefits (\NumFEehcXml{} vs \NumFHufXml{}\,bpb). On English sentences EEHC's file is larger than the input (\NumFEehcEn{}\,bpb), even though its payload alone is \NumEEHCpayloadEn{}\,bpb. The base-8 tree adds up to \NumBaseEightMax\% over a binary tree on the same blocks, as expected: a binary Huffman code is optimal in bits, and any base-8 code is a binary code with 3 bits per digit.
+
+\subsection{Speed and memory}
+\Cref{fig:speed} places each method by compression speed and mean rate on the slices. The cost of the last bits is steep: zstd and Brotli run at megabytes per second, PPMd and bsc remain fast, zpaq and our CM coder run at hundreds of kilobytes per second, and paq8px, NNCP, TRACE and the language models fall to kilobytes per second in both directions, since every one of them decodes by repeating the encoder's computation. paq8px at level~9 also needs 4.3\,GB of memory, and the language models need a GPU.
+
+\begin{figure}[t]\centering
+\includegraphics[width=\columnwidth]{speed}
+\caption{Compression speed (log scale) against mean bits per byte on the 1\,MB slices. Colours as in \cref{fig:languages}.}
+\label{fig:speed}
+\end{figure}

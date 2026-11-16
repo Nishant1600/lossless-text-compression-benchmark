@@ -1,0 +1,10 @@
+psutil
+numpy
+pandas
+matplotlib
+brotli
+zstandard
+pyppmd
+constriction
+torch
+transformers

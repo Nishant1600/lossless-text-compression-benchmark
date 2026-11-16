@@ -1,0 +1,16 @@
+\begin{table}[t]\centering\caption{Language-model payload rate split into tokens per byte (tokeniser) and bits per token (prediction): $r_P=(T/N)(8P/T)$; also bits per character and per line (one sentence per line in the Leipzig files). No piece needed the raw fallback.}\label{tab:tok}\footnotesize\setlength{\tabcolsep}{3.5pt}
+\begin{adjustbox}{max width=\columnwidth}\begin{tabular}{@{}llrrrrr@{}}\toprule
+Model & Text & Tok./byte & Bits/tok. & $r_P$ & Bits/char & Bits/line\\\midrule
+GPT-2 & English & 0.217 & 5.74 & 1.246 & 1.25 & 164\\
+GPT-2 & Hindi & 0.596 & 2.59 & 1.542 & 3.90 & 394\\
+GPT-2 & Chinese & 0.690 & 4.68 & 3.229 & 8.00 & 329\\
+GPT-2 & enwik8 & 0.286 & 4.21 & 1.204 & 1.21 & 103\\
+\midrule
+Qwen-0.5B & English & 0.219 & 4.95 & 1.083 & 1.08 & 143\\
+Qwen-0.5B & Hindi & 0.364 & 2.39 & 0.870 & 2.20 & 222\\
+Qwen-0.5B & Chinese & 0.273 & 5.96 & 1.627 & 4.03 & 166\\
+Qwen-0.5B & enwik8 & 0.264 & 3.29 & 0.869 & 0.87 & 75\\
+\midrule
+Qwen-1.5B & English & 0.219 & 4.46 & 0.975 & 0.98 & 129\\
+Qwen-1.5B & Hindi & 0.364 & 2.09 & 0.761 & 1.92 & 195\\
+\bottomrule\end{tabular}\end{adjustbox}\end{table}

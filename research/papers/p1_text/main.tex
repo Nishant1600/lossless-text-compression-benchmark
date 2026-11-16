@@ -1,0 +1,85 @@
+\documentclass[conference]{IEEEtran}
+\input{../common/preamble}
+\input{numbers}
+
+\begin{document}
+
+\title{Counting the Whole Cost of Lossless Text Compression:\\ A Multilingual Benchmark from Huffman Coding to Language Models on a Consumer Laptop}
+
+\author{\IEEEauthorblockN{Anonymous Author(s)}}
+
+\maketitle
+
+\begin{abstract}
+Claims about new lossless compressors are hard to compare: they use different data, often report only the coded payload, rarely count the model or codebook the decoder needs, and are measured on very different hardware. We run \NumMethods{} lossless text compressors, from order-0 Huffman coding and the recent Enhanced Extended Huffman Coding (EEHC) to PPM, context mixing, adaptive neural compressors (TRACE, DZip, NNCP) and pretrained language models (GPT-2, Qwen2.5-0.5B and -1.5B) driving an arithmetic coder, through one harness on one consumer laptop, and accept a result only after the decoded file matches the original byte for byte. The corpus, TextBench, covers English, Hindi and Chinese text, encyclopaedic markup, literature, XML and source code. We report every method at three levels of cost: the payload alone, the self-contained file, and the file plus any pretrained knowledge the decoder must hold. On 1\,MB slices Qwen2.5-1.5B codes Hindi at \NumSQlHi{} bits per byte, \NumBestLLMgain{} below paq8px, the best classical compressor; yet even the 0.5B model's \NumQwenSmallGB{}\,GB of weights are repaid only after \NumBreakEvenSmall{} of text against xz and \NumBreakEvenSmallPaq{} against paq8px. Splitting the language-model rate into tokens per byte and bits per token shows that most of the gap between English and Hindi or Chinese comes from tokenisation rather than prediction. Block-based Huffman schemes such as EEHC cannot beat order-0 Huffman on text once their codebook is counted. We release the harness, the corpus recipe and all logs.
+\end{abstract}
+
+\begin{IEEEkeywords}
+lossless compression, benchmark, Huffman coding, arithmetic coding, context mixing, neural compression, large language models, multilingual text, reproducibility
+\end{IEEEkeywords}
+
+\section{Introduction}
+Lossless compression papers keep appearing from two very different directions. One line refines entropy coders: block-based and variable-to-variable Huffman codes~\cite{yeful2026eehc,tu2022v2v}, synchronised dynamic Huffman codes~\cite{klein2024dynhuff} and parallel ANS decoders~\cite{lin2023recoil}. The other line replaces hand-built models with learned ones, from recurrent and transformer compressors trained on the input itself~\cite{goyal2019deepzip,goyal2021dzip,mao2022trace,bellard2021nncpv2} to large pretrained language models~\cite{valmeekam2023llmzip,deletang2024lmic,li2025lmcompress}. Both lines report impressive numbers, but the numbers are rarely comparable. The recent EEHC paper, for example, reports 77--86\% reductions measured on the coded bitstream alone, leaving out the codebook its decoder needs~\cite{yeful2026eehc}; language-model compressors report rates that ignore gigabytes of weights~\cite{deletang2024lmic}; and most neural results come from data-centre GPUs.
+
+This paper asks a plain question: \emph{on ordinary text and an ordinary laptop, what does each kind of compressor actually achieve once everything the decoder needs is counted?} Our contributions are:
+\begin{enumerate}
+\item \textbf{One verified harness for \NumMethods{} methods.} It covers entropy-only coders (including a faithful run of EEHC), dictionary and block-sorting compressors, PPM and context mixing, three adaptive neural compressors and three pretrained language models. Every number in this paper comes from a run whose decoded output matched the input's SHA-256.
+\item \textbf{Three-level cost accounting.} We report the payload, the self-contained file, and the file plus pretrained knowledge, and derive the input size at which a pretrained model's weights are paid back (\cref{sec:cost}).
+\item \textbf{A script-aware view.} TextBench contains comparable English, Hindi and Chinese sentence corpora. We decompose each language model's rate into tokens per byte and bits per token, separating the tokeniser's contribution from the model's (\cref{sec:script}).
+\item \textbf{An audit of Huffman-family claims} on text, showing where block codebooks and higher radices help and where they cannot (\cref{sec:huff}).
+\end{enumerate}
+
+\section{Related Work}
+\textbf{Entropy coding.} Huffman codes are optimal among prefix codes for a fixed symbol model but lose up to one bit per symbol~\cite{huffman1952}; arithmetic coding~\cite{witten1987} and asymmetric numeral systems (ANS)~\cite{duda2013ans} remove that loss. Recent Huffman variants extend the alphabet to blocks (EEHC uses 4-, 8- or 16-byte blocks and a base-8 tree~\cite{yeful2026eehc}), choose variable-length groups of symbols~\cite{tu2022v2v}, or rebuild the tree block by block so that the code survives bit errors~\cite{klein2024dynhuff}. Recoil makes rANS decoding scale across thousands of GPU threads~\cite{lin2023recoil}.
+
+\textbf{Modelling.} Practical compressors pair a model with an entropy coder: LZ77 matching~\cite{ziv1977} in gzip, zstd~\cite{rfc8878} and Brotli~\cite{alakuijala2019brotli}; the Burrows--Wheeler transform~\cite{burrows1994} in bzip2 and bsc~\cite{grebnov_bsc}; prediction by partial matching (PPM)~\cite{cleary1984}; and context mixing (CM) in the PAQ family~\cite{mahoney2005paq,paq8px}, which leads most text benchmarks~\cite{mahoney_ltcb}.
+
+\textbf{Neural and language-model compressors.} DeepZip~\cite{goyal2019deepzip} and DZip~\cite{goyal2021dzip} train recurrent models on the file and store (part of) the model with it; TRACE~\cite{mao2022trace} and NNCP~\cite{bellard2019nncp,bellard2021nncpv2} train a transformer online, so no weights are stored but the decoder must repeat the training. LLMZip~\cite{valmeekam2023llmzip}, Del\'etang et al.~\cite{deletang2024lmic} and LMCompress~\cite{li2025lmcompress} use a pretrained model as a shared predictor; Del\'etang et al.\ show that once the weights are counted the rate of a 70B-parameter model on 1\,GB exceeds 100$\times$ the input.
+
+\textbf{Benchmarks.} The Large Text Compression Benchmark ranks programs on enwik8/9 and counts the decompressor size~\cite{mahoney_ltcb}. Sun et al.\ survey and benchmark neural universal compressors on multi-source data~\cite{sun2025nnlcb}. Closest to our multilingual angle, Haddadi and Teahan compare LLaMA-3.2-1B with traditional compressors on eight languages and find the model up to three times worse relative to the best baseline on non-English text~\cite{haddadi2026comparing}; Narashiman and Chandrachoodan observe that GPT-2 expands Hindi text~\cite{narashiman2024alphazip}; Petrov et al.\ show that tokenisers assign up to 15$\times$ more tokens to the same content in some languages~\cite{petrov2023tokenizers}.
+
+\textbf{What is new here.} Prior benchmarks study either neural compressors or classical ones, report one size per method, and use server hardware. We put the Huffman-family coders, classical compressors, adaptive neural models and pretrained language models in the same verified harness on a laptop, report three cost levels with an explicit break-even size, vary the tokeniser and model size independently across three scripts, and quantify how much of the multilingual gap is due to tokenisation.
+
+\section{Experimental Setup}
+\subsection{TextBench}
+\Cref{tab:corpus} lists the corpus. English, Hindi and Chinese sentences come from the Leipzig Corpora Collection's 100K-sentence Wikipedia samples~\cite{goldhahn2012leipzig} (sentence IDs removed, one sentence per line, UTF-8). Hindi (Devanagari) and Chinese (Han) characters take three bytes in UTF-8, so these files test byte-level compressors on multi-byte scripts. We add the first 10\,MB of enwik8 (English Wikipedia XML)~\cite{mahoney_ltcb}, \texttt{dickens} and \texttt{xml} from the Silesia corpus~\cite{deorowicz2003silesia}, a source-code file built from the C/C++ sources of paq8px, libbsc and zpaq, and the eight text files of the Canterbury corpus~\cite{arnold1997canterbury}. Slow methods run on 1\,MB slices: the first megabyte of each file, cut at a line break.
+
+\input{tables/corpus}
+
+\subsection{Methods}
+\Cref{tab:methods} lists the methods and settings. EEHC, plain and extended Huffman and the context-mixing coder (CM) come from our earlier open implementation of EEHC; the block-wise dynamic Huffman coder follows Klein et al.~\cite{klein2024dynhuff} (tree rebuilt every 4\,KiB from all bytes seen so far, codes limited to 16 bits) and needs no stored table; rANS uses the \texttt{constriction} library~\cite{bamler2022constriction}. TRACE and DZip are the authors' code with only the changes needed to run on current PyTorch and NumPy (listed in our repository); NNCP is Bellard's 2024 Windows build, which we had to run on the CPU because its CUDA path crashes with the CUDA~13 driver. For language models we implemented the LLMZip / Del\'etang et al.\ scheme: the text is cut at line breaks into pieces of at most 1,023 tokens, each piece is coded from a fresh context, and the model's next-token distribution, quantised on the GPU to integer frequencies, drives an exact 32-bit arithmetic coder. Encoder and decoder run the identical incremental computation, so decoding is exact; pieces that are not valid UTF-8 or whose tokens do not decode back to the same bytes are stored separately with zstd and counted.
+
+\input{tables/methods}
+
+\subsection{Cost accounting}\label{sec:cost}
+For an input of $N$ bytes a method produces a payload $P$ (the coded symbols), side information $S$ that the decoder reads from the file (headers, codebooks, stored model weights) and may rely on pretrained knowledge $K$ that is \emph{not} in the file (language-model weights, Brotli's built-in dictionary). We report
+\begin{equation}
+r_P = \tfrac{8P}{N},\qquad r_F = \tfrac{8(P+S)}{N},\qquad r_K(N) = \tfrac{8(P+S)+8K}{N}
+\end{equation}
+in bits per byte (bpb). $r_P$ is what many papers report; $r_F$ is the size of the file one would actually store; $r_K$ charges the pretrained knowledge once, as the LTCB does for decompressor size~\cite{mahoney_ltcb} and Del\'etang et al.\ do for model weights~\cite{deletang2024lmic}. If a method beats a reference compressor by $\Delta = r_F^{\text{ref}} - r_F$ bpb, its knowledge is paid back after $N^\ast = 8K/\Delta$ bytes.
+
+\subsection{Tokeniser decomposition}\label{sec:script}
+For a language-model coder, $r_P = \frac{T}{N}\cdot\frac{8P}{T}$: tokens per byte ($T/N$) times bits per token. The first factor depends only on the tokeniser; the second on how well the model predicts. Comparing GPT-2 (English-centred byte-level BPE, 50K vocabulary) with Qwen2.5 (multilingual byte-level BPE, 151K vocabulary) at similar and different model sizes separates the two.
+
+\subsection{Hardware and verification}
+All runs used one laptop: Intel Core i5-13420H (8 cores, 12 threads), 16\,GB RAM, NVIDIA RTX 4050 Laptop GPU (6\,GB), Windows 11, Python 3.10, PyTorch 2.14 (CUDA 13), Node 24. Every codec ran in its own process; we recorded wall time and peak resident memory of the process tree, and accepted a result only if the SHA-256 of the decoded file matched. Ratios are exact; times were measured while other benchmark jobs shared the machine and are indicative (\cref{sec:threats}).
+
+\section{Results}
+\input{results}
+
+\section{Discussion}
+\input{discussion}
+
+\section{Conclusion}
+\input{conclusion}
+
+\section*{Data and Code Availability}
+The harness (\texttt{research/bench}), analysis scripts, corpus-building scripts and raw JSONL logs are in the project repository. The corpora are public: Leipzig Corpora Collection (CC BY), enwik8, Silesia and Canterbury.
+
+\section*{Disclosure}
+[Authors: state here, as required by the target venue, how AI-based tools were used in running the experiments and preparing the manuscript.]
+
+\bibliographystyle{IEEEtran}
+\bibliography{../common/references}
+
+\end{document}

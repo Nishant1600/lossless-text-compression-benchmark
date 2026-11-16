@@ -1,0 +1,21 @@
+\begin{table}[t]\centering\caption{Methods. Families: E = entropy coder only, D = dictionary or block sorting, M = context model or adaptive neural network, L = pretrained language model.}\label{tab:methods}\footnotesize\setlength{\tabcolsep}{3pt}
+\begin{adjustbox}{max width=\columnwidth}\begin{tabular}{@{}c>{\raggedright\arraybackslash}p{1.55cm}>{\raggedright\arraybackslash}p{3.65cm}>{\raggedright\arraybackslash}p{2.05cm}@{}}\toprule
+Fam. & Method & Setting & Implementation\\\midrule
+E & Huffman & order-0, binary tree, table stored & project JS\\
+E & Dyn.\ Huffman & tree rebuilt per 4\,KiB, no table~\cite{klein2024dynhuff} & ours (Python)\\
+E & rANS-0 & order-0 static ANS~\cite{duda2013ans} & \texttt{constriction}\\
+E & Ext.\ Huffman & binary tree over 4/8/16-B blocks & project JS\\
+E & EEHC & base-8 tree over 4/8/16-B blocks~\cite{yeful2026eehc} & project JS\\
+D & gzip / bzip2 / xz & level 9 / 9 / 9e & Python stdlib\\
+D & zstd & level 19, long mode, 128\,MiB window & \texttt{zstandard}\\
+D & Brotli & quality 11, 16\,MiB window & \texttt{brotli}\\
+D & bsc & BWT + QLFC, 64\,MB blocks, single thread & libbsc 3.3\\
+M & PPMd & variant H, order 8, 256\,MiB & \texttt{pyppmd}\\
+M & zpaq & method 5 & zpaq 7.15\\
+M & CM & context mixing, 2 mixers + SSE & project JS\\
+M & paq8px & level 9 (4.3\,GB) & v217\\
+M & DZip / DZip-bs & biGRU, 8 epochs; combined / bootstrap only & authors' code\\
+M & TRACE & 1-layer transformer, online & authors' code\\
+M & NNCP & transformer, online, default profile, CPU & 2024-06-05\\
+L & GPT-2 / Qwen-0.5B / Qwen-1.5B & pretrained LM + arithmetic coding & ours, HF weights\\
+\bottomrule\end{tabular}\end{adjustbox}\end{table}
